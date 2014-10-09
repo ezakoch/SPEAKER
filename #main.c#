@@ -1,0 +1,32 @@
+// Eza Koch
+// MEAM 510
+// 10/02/13
+// cd Desktop/M2/Timer
+// Access Timer 1, set B6 to 500 Hz Freqency and 50% Duty Cycle
+
+#include "m_general.h" // library of useful functions
+#define pin 5
+m_clockdivide(0); //16Mhz
+OCR1A = 0x1F; // 31 in hex, 15625/ 31 = 504.03 Hz
+OCR1B = 0xF; // 15
+
+set(TCCR1B, CS12); //set prescaler to /1024 = 15,625Hz
+clear(TCCR1B, CS11);
+set(TCCR1B,CS10);
+
+clear(TCCR1B,WGM13); // MODE: up to OCR1A (4)
+set(TCCR1B,WGM12);   //^
+clear(TCCR1B,WGM11); //^
+clear(TCCR1B,WGM10); //^
+
+clear(TCCR1A, COM1B1); //toggle
+set(TCCR1A, COM1B0);   //^
+
+set(DDRB,pin); //set B5 as output
+
+void main(void)
+{
+    while (TRUE){ //continue "blink" forever
+        toggle(PORTB,pin); // toggles B6 hi/lo
+    }
+}

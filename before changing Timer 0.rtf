@@ -1,0 +1,321 @@
+{\rtf1\ansi\ansicpg1252\cocoartf1138\cocoasubrtf510
+{\fonttbl\f0\fmodern\fcharset0 CourierNewPSMT;\f1\froman\fcharset0 Times-Roman;}
+{\colortbl;\red255\green255\blue255;}
+\margl1440\margr1440\vieww10800\viewh8400\viewkind0
+\deftab720
+\pard\pardeftab720\sl420
+
+\f0\fs38 \cf0 /* L4a_csorice.c
+\f1\fs24 \
+
+\f0\fs38  * Created: 10/3/2013 9:09:34 PM
+\f1\fs24 \
+
+\f0\fs38  * \'a0Author: Cristina & Eza */
+\f1\fs24 \
+
+\f0\fs38 // cd Desktop/M2/Speaker
+\f1\fs24 \
+\pard\pardeftab720
+\cf0 \
+\pard\pardeftab720\sl420
+
+\f0\fs38 \cf0 #define F_CPU 16000000
+\f1\fs24 \
+\pard\pardeftab720
+\cf0 \
+\pard\pardeftab720\sl420
+
+\f0\fs38 \cf0 #include <avr/io.h>
+\f1\fs24 \
+
+\f0\fs38 #include "m_general.h"
+\f1\fs24 \
+
+\f0\fs38 #include <avr/interrupt.h>
+\f1\fs24 \
+
+\f0\fs38 #include "m_rf.h"
+\f1\fs24 \
+
+\f0\fs38 #include "m_bus.h"
+\f1\fs24 \
+\pard\pardeftab720
+\cf0 \
+\pard\pardeftab720\sl420
+
+\f0\fs38 \cf0 //Variables
+\f1\fs24 \
+
+\f0\fs38 char buffer[3]=\{0,0,0\};
+\f1\fs24 \
+
+\f0\fs38 volatile char duration;
+\f1\fs24 \
+
+\f0\fs38 volatile int i,deciFreq,cycles;
+\f1\fs24 \
+\pard\pardeftab720
+\cf0 \
+\pard\pardeftab720\sl420
+
+\f0\fs38 \cf0 //LOOKUP TABLE
+\f1\fs24 \
+
+\f0\fs38 int wave[360] = \{130, 132, 134, 136, 139, 141, 143, 145, 148, 150, 152, 154, 156, 158, 161, 163, 165, 167, 169, 171, 173, 175, 178, 180, 182, 184, 186, 188, 190, 192, 193, 195, 197, 199, 201, 203, 205, 206, 208, 210, 211, 213, 215, 216, 218, 220, 221, 223, 224, 226, 227, 228, 230, 231, 232, 234, 235, 236, 237, 238, 239, 241, 242, 243, 244, 244, 245, 246, 247, 248, 249, 249, 250, 251, 251, 252, 252, 253, 253, 254, 254, 254, 255, 255, 255, 255, 255, 255, 255, 256, 255, 255, 255, 255, 255, 255, 255, 254, 254, 254, 253, 253, 252, 252, 251, 251, 250, 249, 249, 248, 247, 246, 245, 244, 244, 243, 242, 241, 239, 238, 237, 236, 235, 234, 232, 231, 230, 228, 227, 226, 224, 223, 221, 220, 218,	216, 215, 213, 211,	210, 208, 206, 205, 203,	201, 199, 197, 195, 193, 192, 190, 188, 186,184, 182, 180, 178, 175, 173, 171, 169, 167, 165, 163, 161, 158,156, 154, 152, 150, 148, 145, 143, 141, 139, 136, 134, 132, 130,128, 125, 123, 121, 119, 116, 114, 112, 110, 107, 105, 103, 101,99,	97,	94,	92,	90,	88,	86,	84,	82,	80,	77,	75,	73,	71,	69,	67,	65,	64,	62,	60,	58,	56,	54,	52,	50,	49,	47,	45,	44,	42,	40,	39,	37,	35,	34,	32,	31,	29,	28,	27,	25,	24,	23,	21,	20,	19,	18,	17,	16,	14,	13,	12,	11,	11,	10,	9, 8, 7, 6,	6,	5,	4,	4,	3,	3,	2,	2,	1,	1,	1,	0,	0,	0,	0,	0,	0,	0,	0,	0,	0,	0,	0,	0,	0,	0,	1,	1,	1,	2,	2,	3,	3,	4,	4,	5,	6,	6,	7,	8,	9,	10	,11,	11,	12,	13,	14,	16,	17,	18,	19,	20,	21,	23,	24,	25,	27,	28,	29,	31,	32,	34,	35,	37,	39,	40,	42,	44,	45,	47,	49,	50,	52,	54,	56,	58,	60,	62,	64,	65,	67,	69,	71,	73,	75,	77,	80,	82,	84,	86,	88,	90,	92,	94,	97,	99,	101,103,105,107,110,112,114,116,119,121,123,125,128\};
+\f1\fs24 \
+\pard\pardeftab720
+\cf0 \
+\pard\pardeftab720\sl420
+
+\f0\fs38 \cf0 // Subroutines
+\f1\fs24 \
+
+\f0\fs38 void init1(void);
+\f1\fs24 \
+
+\f0\fs38 void init3(void);
+\f1\fs24 \
+\pard\pardeftab720
+\cf0 \
+\pard\pardeftab720\sl420
+
+\f0\fs38 \cf0 int main(void) //Prototype
+\f1\fs24 \
+
+\f0\fs38 \{
+\f1\fs24 \
+
+\f0\fs38  \'a0\'a0\'a0
+\f1\fs24 \
+
+\f0\fs38  \'a0\'a0\'a0m_clockdivide(0); //16 MHz
+\f1\fs24 \
+
+\f0\fs38  \'a0\'a0\'a0set(DDRB,6); //set B6 to output
+\f1\fs24 \
+
+\f0\fs38  \'a0\'a0\'a0OCR1A = 256; //OCR1A is constant
+\f1\fs24 \
+
+\f0\fs38  \'a0\'a0\'a0m_rf_open(1,0x4C,3);//m_rf_open(channel,RXaddress,packet_length)
+\f1\fs24 \
+
+\f0\fs38  \'a0\'a0\'a0init1(); //Initialize Timers
+\f1\fs24 \
+
+\f0\fs38  \'a0\'a0\'a0init3();
+\f1\fs24 \
+
+\f0\fs38 	
+\f1\fs24 \
+
+\f0\fs38  \'a0\'a0\'a0while(1) //main loop
+\f1\fs24 \
+
+\f0\fs38  \'a0\'a0\'a0\{
+\f1\fs24 \
+
+\f0\fs38  \'a0\'a0\'a0\'a0\'a0\'a0\'a0while(!check(TIFR3, OCF3A))\{//FLAG:set when TCNT3 matches OCR3A
+\f1\fs24 \
+
+\f0\fs38  \'a0\'a0\'a0\'a0\'a0\'a0\'a0\'a0\'a0\'a0\'a0set(TIFR3,OCF3A); //clear by setting
+\f1\fs24 \
+
+\f0\fs38  \'a0\'a0\'a0\'a0\'a0\'a0\'a0\'a0\'a0\'a0\'a0m_green(TOGGLE); //visual output
+\f1\fs24 \
+
+\f0\fs38  \'a0\'a0\'a0\'a0\'a0\'a0\'a0\'a0\'a0\'a0\'a0i++; //
+\f1\fs24 \
+
+\f0\fs38  \'a0\'a0\'a0\'a0\'a0\'a0\'a0\'a0\'a0\'a0\'a0
+\f1\fs24 \
+
+\f0\fs38  \'a0\'a0\'a0\'a0\'a0\'a0\'a0\'a0\'a0\'a0\'a0if (i>=sizeof(wave))\{
+\f1\fs24 \
+
+\f0\fs38  \'a0\'a0\'a0\'a0\'a0\'a0\'a0\'a0\'a0\'a0\'a0\'a0\'a0\'a0\'a0i=0; //reset
+\f1\fs24 \
+
+\f0\fs38  \'a0\'a0\'a0\'a0\'a0\'a0\'a0\'a0\'a0\'a0\'a0\'a0\'a0\'a0\'a0cycles++; //increment
+\f1\fs24 \
+
+\f0\fs38  \'a0\'a0\'a0\'a0\'a0\'a0\'a0\'a0\'a0\'a0\'a0\'a0\'a0\'a0\'a0if (cycles>duration) cycles=0; //
+\f1\fs24 \
+
+\f0\fs38  \'a0\'a0\'a0\'a0\'a0\'a0\'a0\'a0\'a0\'a0\'a0\}
+\f1\fs24 \
+
+\f0\fs38  \'a0\'a0\'a0\'a0\'a0\'a0\'a0\'a0\'a0\'a0\'a0OCR1B=wave[i]; //set OCR1B (for duty cycle)
+\f1\fs24 \
+
+\f0\fs38  \'a0\'a0\'a0\'a0\'a0\'a0\'a0\}
+\f1\fs24 \
+
+\f0\fs38  \'a0\'a0\'a0\}
+\f1\fs24 \
+
+\f0\fs38  \'a0\'a0\'a0
+\f1\fs24 \
+
+\f0\fs38  \'a0\'a0\'a0cli();//disable interrupts
+\f1\fs24 \
+
+\f0\fs38 \}
+\f1\fs24 \
+\pard\pardeftab720
+\cf0 \
+\pard\pardeftab720\sl420
+
+\f0\fs38 \cf0 //Use Timer 1 for PWM control
+\f1\fs24 \
+
+\f0\fs38 void init1(void)\{
+\f1\fs24 \
+
+\f0\fs38  \'a0\'a0\'a0//TIMER 1
+\f1\fs24 \
+
+\f0\fs38 	clear(TCCR1B,CS12);	//prescalar of 1 = 16MHz = FAST
+\f1\fs24 \
+
+\f0\fs38 	clear(TCCR1B,CS11);
+\f1\fs24 \
+
+\f0\fs38 	set (TCCR1B,CS10);
+\f1\fs24 \
+
+\f0\fs38  \'a0\'a0\'a0
+\f1\fs24 \
+
+\f0\fs38 	set(TCCR1B,WGM13);	//mode15 (UP to OCR1A, PWM mode)
+\f1\fs24 \
+
+\f0\fs38 	set(TCCR1B,WGM12);
+\f1\fs24 \
+
+\f0\fs38 	set(TCCR1A,WGM11);
+\f1\fs24 \
+
+\f0\fs38 	set(TCCR1A,WGM10);
+\f1\fs24 \
+
+\f0\fs38  \'a0\'a0\'a0
+\f1\fs24 \
+
+\f0\fs38 	set(TCCR1A,COM1B1);	//clear at OCR1B, set at rollover
+\f1\fs24 \
+
+\f0\fs38 	clear(TCCR1A,COM1B0);
+\f1\fs24 \
+
+\f0\fs38  \'a0\'a0\'a0
+\f1\fs24 \
+
+\f0\fs38  \'a0\'a0\'a0OCR1B = 0; //initialize for the first run
+\f1\fs24 \
+
+\f0\fs38 	//OCR1A? Put here instead?
+\f1\fs24 \
+
+\f0\fs38 \}
+\f1\fs24 \
+\pard\pardeftab720
+\cf0 \
+\pard\pardeftab720\sl420
+
+\f0\fs38 \cf0 //Use Timer 3 to go through lookup table
+\f1\fs24 \
+
+\f0\fs38 void init3(void)\{
+\f1\fs24 \
+
+\f0\fs38  \'a0\'a0\'a0
+\f1\fs24 \
+
+\f0\fs38 	clear(TCCR3B,CS32);	//prescalar of 8 = 2MHz
+\f1\fs24 \
+
+\f0\fs38 	set(TCCR3B,CS31);
+\f1\fs24 \
+
+\f0\fs38 	clear(TCCR3B,CS30);
+\f1\fs24 \
+
+\f0\fs38  \'a0\'a0\'a0
+\f1\fs24 \
+
+\f0\fs38 	clear(TCCR3B,WGM33); //mode 4 (up to OCR3A)
+\f1\fs24 \
+
+\f0\fs38 	set(TCCR3B,WGM32);
+\f1\fs24 \
+
+\f0\fs38 	clear(TCCR3A,WGM31);
+\f1\fs24 \
+
+\f0\fs38 	clear(TCCR3A,WGM30);
+\f1\fs24 \
+
+\f0\fs38 \}
+\f1\fs24 \
+\pard\pardeftab720
+\cf0 \
+\pard\pardeftab720\sl420
+
+\f0\fs38 \cf0 //Interrupt for wireless packet
+\f1\fs24 \
+
+\f0\fs38 ISR(INT2_vect)
+\f1\fs24 \
+
+\f0\fs38 \{
+\f1\fs24 \
+
+\f0\fs38  \'a0\'a0\'a0cli(); //prioritize this interrupt
+\f1\fs24 \
+
+\f0\fs38  \'a0\'a0\'a0m_red(ON);
+\f1\fs24 \
+
+\f0\fs38  \'a0\'a0\'a0m_rf_read(buffer,3);
+\f1\fs24 \
+
+\f0\fs38  \'a0\'a0\'a0m_red(OFF);
+\f1\fs24 \
+
+\f0\fs38  \'a0\'a0\'a0m_green(ON);
+\f1\fs24 \
+
+\f0\fs38  \'a0\'a0\'a0deciFreq = ((int)buffer[0] + 256*(int)buffer[1]); //deciHz
+\f1\fs24 \
+
+\f0\fs38  \'a0\'a0\'a0duration = buffer[2]; //csec
+\f1\fs24 \
+
+\f0\fs38  \'a0\'a0\'a0OCR3A = ((int)444444.44/deciFreq);//new freq in cycles
+\f1\fs24 \
+
+\f0\fs38  \'a0\'a0\'a0sei(); //continue looking for interrupts
+\f1\fs24 \
+
+\f0\fs38 \}
+\f1\fs24 \
+\pard\pardeftab720
+\cf0 \
+\pard\pardeftab720\sl420
+
+\f0\fs38 \cf0 // \'a0\'a0\'a0for (i=0;i<360;i++)\{ //sine table from 0 to 256
+\f1\fs24 \
+
+\f0\fs38 // \'a0\'a0\'a0\'a0\'a0\'a0\'a0sine=floor(1023*math.sin(i/360));//convert to radians
+\f1\fs24 \
+
+\f0\fs38 // \'a0\'a0\'a0\}
+\f1\fs24 \
+
+\f0\fs38 //
+\f1\fs24 \
+\pard\pardeftab720
+\cf0 \
+}
